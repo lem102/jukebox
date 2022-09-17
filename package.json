@@ -1,0 +1,19 @@
+{
+  "name": "nodempv",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mpv": "^1.0.0",
+    "node-fetch": "^3.2.10",
+    "socket.io": "^4.5.2",
+    "socket.io-client": "^4.5.2"
+  }
+}
