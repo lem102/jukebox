@@ -7,7 +7,7 @@ const socket = io("ws://192.168.1.110:3000");
 // const socket = io("ws://localhost:3000");
 
 const mpv = Mpv({
-  args: [],
+  args: ["--no-video"],
   options: {},
   path: "mpv",
 });
