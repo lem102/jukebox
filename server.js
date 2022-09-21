@@ -5,16 +5,20 @@ const io = new Server(3000);
 let queue = [];
 let locked = false;
 
+const send = (message) => {
+  io.emit("message", message);
+};
+
 const maybeSendNextTrack = (socket) => {
   if (!locked && queue.length > 0) {
     locked = true;
-    socket.send({ type: "url", data: queue.shift() });
+    send({ type: "url", data: queue.shift() });
   }
 };
 
 const skipCurrentTrack = (socket) => {
   locked = false;
-  socket.send({ type: "skip" });
+  send({ type: "skip" });
 };
 
 io.on("connection", (socket) => {
@@ -34,7 +38,7 @@ io.on("connection", (socket) => {
         skipCurrentTrack(socket);
         break;
       case "listSongs":
-        socket.send({ type: "list", data: queue });
+       send({ type: "list", data: queue });
         break;
       default:
         console.log(`unrecognised message type ${type}`);
