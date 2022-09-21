@@ -3,11 +3,11 @@ import { io } from "socket.io-client";
 import { prompt } from "./prompt.js";
 import { searchYoutube } from "./searchYoutube.js";
 
-// const socket = io("ws://192.168.1.110:3000");
-const socket = io("ws://localhost:3000");
+const socket = io("ws://192.168.1.110:3000");
+// const socket = io("ws://localhost:3000");
 
 const mpv = Mpv({
-  args: ["--no-video"],
+  args: [],
   options: {},
   path: "mpv",
 });
@@ -28,6 +28,8 @@ mpv.on("end-file", () => {
 });
 
 socket.on("message", (message) => {
+  console.log("message received");
+  console.log(message);
   const { type, data } = message;
   switch (type) {
     case "url":
@@ -64,6 +66,7 @@ const main = async () => {
     const { command, args } = parseInput(input);
     switch (command) {
       case "play":
+        console.log("sending play command");
         socket.send({ type: "queueSong", data: await play(args) });
         break;
       case "skip":
