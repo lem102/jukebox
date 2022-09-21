@@ -12,17 +12,29 @@ const maybeSendNextTrack = (socket) => {
   }
 };
 
+const skipCurrentTrack = (socket) => {
+  locked = false;
+  socket.send({ type: "skip" });
+};
+
 io.on("connection", (socket) => {
   socket.on("message", (message) => {
+    console.log({ message, queue });
     const { type, data } = message;
     switch (type) {
-      case "next":
+      case "nextSong":
         locked = false;
         maybeSendNextTrack(socket);
         break;
       case "queueSong":
         queue.push(data);
         maybeSendNextTrack(socket);
+        break;
+      case "skipSong":
+        skipCurrentTrack(socket);
+        break;
+      case "listSongs":
+        socket.send({ type: "list", data: queue });
         break;
       default:
         console.log(`unrecognised message type ${type}`);
