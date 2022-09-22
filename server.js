@@ -4,6 +4,8 @@ const io = new Server(3000);
 
 let queue = [];
 let locked = false;
+let connections = 0;
+let loaded = 0;
 
 const send = (message) => {
   io.emit("message", message);
@@ -22,6 +24,8 @@ const skipCurrentTrack = (socket) => {
 };
 
 io.on("connection", (socket) => {
+  connections++;
+  console.log(`new connection; now there are ${connections} connections.`);
   socket.on("message", (message) => {
     console.log({ message, queue });
     const { type, data } = message;
@@ -38,7 +42,13 @@ io.on("connection", (socket) => {
         skipCurrentTrack(socket);
         break;
       case "listSongs":
-       send({ type: "list", data: queue });
+        send({ type: "list", data: queue });
+        break;
+      case "loaded":
+        loaded++;
+        if (loaded >= connections) {
+          send({ type: "play" });
+        }
         break;
       default:
         console.log(`unrecognised message type ${type}`);
@@ -46,6 +56,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", (reason) => {
+    connections--;
     if (io.engine.clientsCount <= 0) {
       locked = false;
     }

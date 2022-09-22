@@ -1,10 +1,11 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import Mpv from "mpv";
 import { io } from "socket.io-client";
-import { prompt } from "./prompt.js";
-import { searchYoutube } from "./searchYoutube.js";
+import { parseInput, parsePlayArgs, prompt } from "./helpers.js";
 
-const socket = io("ws://192.168.1.110:3000");
-// const socket = io("ws://localhost:3000");
+const socket = io(process.env.SERVER_URL);
 
 const mpv = Mpv({
   args: ["--no-video"],
@@ -12,16 +13,25 @@ const mpv = Mpv({
   path: "mpv",
 });
 
-const playNext = (url) => {
+const loadNext = async (url) => {
   mpv.command(
     "loadfile",
     url,
   );
+  await mpv.set("pause", true);
 };
 
 const skipCurrent = () => {
   mpv.command("stop");
 };
+
+const play = async () => {
+  await mpv.set("pause", false);
+};
+
+mpv.on("start-file", () => {
+  socket.send({ type: "loaded" });
+});
 
 mpv.on("end-file", () => {
   socket.send({ type: "nextSong" });
@@ -33,7 +43,7 @@ socket.on("message", (message) => {
   const { type, data } = message;
   switch (type) {
     case "url":
-      playNext(data);
+      loadNext(data);
       break;
     case "skip":
       skipCurrent();
@@ -41,24 +51,11 @@ socket.on("message", (message) => {
     case "list":
       console.log(data);
       break;
+    case "play":
+      play();
+      break;
   }
 });
-
-const parseInput = (input) => {
-  if (input.includes(" ")) {
-    const [, command, args] = input.match(/([a-z]+) (.+)/);
-    return { command, args };
-  }
-  return { command: input };
-};
-
-const play = async (args) => {
-  if (!args) {
-    console.log("play requires an argument");
-    return;
-  }
-  return /^http?s:\/\//.test(args) ? args : await searchYoutube(args);
-};
 
 const main = async () => {
   while (true) {
@@ -67,7 +64,7 @@ const main = async () => {
     switch (command) {
       case "play":
         console.log("sending play command");
-        socket.send({ type: "queueSong", data: await play(args) });
+        socket.send({ type: "queueSong", data: await parsePlayArgs(args) });
         break;
       case "skip":
         socket.send({ type: "skipSong" });

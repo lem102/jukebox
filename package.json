@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.0.2",
     "mpv": "^1.0.0",
     "node-fetch": "^3.2.10",
     "socket.io": "^4.5.2",
