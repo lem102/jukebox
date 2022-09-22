@@ -3,7 +3,7 @@ import { Server } from "socket.io";
 const io = new Server(3000);
 
 let queue = [];
-let locked = false;
+let playing = false;
 let connections = 0;
 let loaded = 0;
 
@@ -11,35 +11,31 @@ const send = (message) => {
   io.emit("message", message);
 };
 
-const maybeSendNextTrack = (socket) => {
-  if (!locked && queue.length > 0) {
-    locked = true;
+const maybeSendNextTrack = () => {
+  if (!playing && queue.length > 0) {
+    playing = true;
     send({ type: "url", data: queue.shift() });
   }
 };
 
-const skipCurrentTrack = (socket) => {
-  locked = false;
-  send({ type: "skip" });
-};
-
 io.on("connection", (socket) => {
   connections++;
-  console.log(`new connection; now there are ${connections} connections.`);
+  console.log(`client connected; now there are ${connections} connections.`);
   socket.on("message", (message) => {
     console.log({ message, queue });
     const { type, data } = message;
     switch (type) {
       case "nextSong":
-        locked = false;
-        maybeSendNextTrack(socket);
+        playing = false;
+        maybeSendNextTrack();
         break;
       case "queueSong":
         queue.push(data);
-        maybeSendNextTrack(socket);
+        maybeSendNextTrack();
         break;
       case "skipSong":
-        skipCurrentTrack(socket);
+        playing = false;
+        send({ type: "skip" });
         break;
       case "listSongs":
         send({ type: "list", data: queue });
@@ -47,6 +43,7 @@ io.on("connection", (socket) => {
       case "loaded":
         loaded++;
         if (loaded >= connections) {
+          loaded = 0;
           send({ type: "play" });
         }
         break;
@@ -57,8 +54,11 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", (reason) => {
     connections--;
+    console.log(
+      `client disconnected; now there are ${connections} connections.`,
+    );
     if (io.engine.clientsCount <= 0) {
-      locked = false;
+      playing = false;
     }
   });
 });
